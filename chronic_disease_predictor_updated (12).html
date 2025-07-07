@@ -1,0 +1,2614 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3대 만성질환 위험도 예측 서비스</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .save-status {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .save-status.show {
+            opacity: 1;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            border: 2px solid #f0f0f0;
+            border-radius: 15px;
+            background: #fafafa;
+        }
+
+        .form-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .required-notice {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 140px;
+            text-align: center;
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-unknown {
+            padding: 8px 12px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-unknown:hover {
+            background: #5a6268;
+        }
+
+        #bmi {
+            width: 80px;
+            flex-shrink: 0;
+        }
+
+        #bmiInterpretation {
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .results {
+            display: none;
+            margin-top: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+        }
+
+        .results h3 {
+            color: #333;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            position: relative;
+            height: auto;
+            width: 100%;
+            min-height: 300px;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        /* Chart.js 차트를 위한 컨테이너 */
+        .chart-canvas-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chart-subtitle {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .bar-chart {
+            margin: 20px 0;
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .bar-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            flex-wrap: wrap;
+            min-height: 50px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .bar-label {
+            width: 100px;
+            font-weight: 600;
+            color: #333;
+            flex-shrink: 0;
+            min-width: 80px;
+        }
+
+        /* Progress container 개선 */
+        .bar-container {
+            flex: 1;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            margin: 0 15px;
+            position: relative;
+            overflow: hidden;
+            min-width: 100px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Progress bar 개선 */
+        .bar-fill {
+            height: 100%;
+            border-radius: 15px;
+            transition: width 1s ease-in-out;
+            position: relative;
+            min-width: 1px;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        .bar-fill.hypertension {
+            background: linear-gradient(90deg, #ff6b6b, #ff5252);
+        }
+
+        .bar-fill.diabetes {
+            background: linear-gradient(90deg, #4ecdc4, #26a69a);
+        }
+
+        .bar-fill.hyperlipidemia {
+            background: linear-gradient(90deg, #45b7d1, #2196f3);
+        }
+
+        .bar-percentage {
+            font-weight: 600;
+            color: #333;
+            min-width: 50px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .comparison-note {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            color: #555;
+        }
+
+        .risk-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+            overflow: hidden;
+        }
+
+        .risk-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .risk-card h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .risk-percentage {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .risk-level {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .risk-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .low-risk {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .moderate-risk {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .high-risk {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .low-risk .risk-percentage {
+            color: #28a745;
+        }
+
+        .moderate-risk .risk-percentage {
+            color: #ffc107;
+        }
+
+        .high-risk .risk-percentage {
+            color: #dc3545;
+        }
+
+        .recommendations {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .recommendations h4 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .disease-recommendations {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .disease-recommendations h5 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .recommendations ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .recommendations li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+            position: relative;
+        }
+
+        .recommendations li:last-child {
+            border-bottom: none;
+        }
+
+        .detail-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 10px;
+            font-size: 0.9rem;
+        }
+
+        .detail-link:hover {
+            text-decoration: underline;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        /* 차트와 이미지 반응형 처리 */
+        canvas, img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* 바 그래프 색상 강제 표시 */
+        .bar-fill {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .bar-fill.hypertension {
+            background: linear-gradient(90deg, #ff6b6b, #ff5252) !important;
+        }
+
+        .bar-fill.diabetes {
+            background: linear-gradient(90deg, #4ecdc4, #26a69a) !important;
+        }
+
+        .bar-fill.hyperlipidemia {
+            background: linear-gradient(90deg, #45b7d1, #2196f3) !important;
+        }
+
+        /* 모바일 최적화 미디어 쿼리 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 10px;
+                margin: 0;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+                line-height: 1.2;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .form-section {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .form-section h3 {
+                font-size: 1.2rem;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: none;
+                padding: 15px;
+                font-size: 1rem;
+            }
+            
+            .results {
+                padding: 20px;
+                margin-top: 20px;
+            }
+            
+            .chart-container {
+                padding: 15px;
+                min-height: 250px;
+            }
+            
+            .chart-canvas-container {
+                height: 250px;
+            }
+            
+            .chart-title {
+                font-size: 1.1rem;
+            }
+            
+            .chart-subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .bar-chart {
+                width: 100%;
+                overflow-x: visible;
+            }
+            
+            .bar-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+                margin-bottom: 20px;
+                min-height: 80px;
+                padding: 10px;
+                border: 1px solid #e9ecef;
+                border-radius: 8px;
+                background: #f8f9fa;
+            }
+            
+            .bar-label {
+                width: 100%;
+                text-align: center;
+                font-size: 1rem;
+                order: 1;
+            }
+            
+            .bar-container {
+                margin: 8px 0;
+                order: 2;
+                min-width: 200px;
+                height: 25px;
+                background: #f0f0f0 !important;
+                border-radius: 15px !important;
+                overflow: visible !important;
+                display: block !important;
+            }
+            
+            .bar-fill {
+                display: block !important;
+                height: 100% !important;
+                border-radius: 15px !important;
+                min-width: 5px !important;
+                transition: width 1s ease-in-out !important;
+            }
+            
+            .bar-fill.hypertension {
+                background: linear-gradient(90deg, #ff6b6b, #ff5252) !important;
+            }
+
+            .bar-fill.diabetes {
+                background: linear-gradient(90deg, #4ecdc4, #26a69a) !important;
+            }
+
+            .bar-fill.hyperlipidemia {
+                background: linear-gradient(90deg, #45b7d1, #2196f3) !important;
+            }
+            
+            .bar-percentage {
+                text-align: center;
+                order: 3;
+                font-size: 1.1rem;
+                font-weight: bold;
+            }
+            
+            .risk-cards {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .risk-card {
+                padding: 20px;
+            }
+            
+            .risk-percentage {
+                font-size: 2rem;
+            }
+            
+            .risk-icon {
+                font-size: 2.5rem;
+            }
+            
+            .modal-content {
+                margin: 20% auto;
+                padding: 15px;
+                width: 95%;
+            }
+            
+            .recommendations {
+                padding: 15px;
+            }
+            
+            .disease-recommendations {
+                padding: 12px;
+            }
+            
+            /* BMI 입력 필드 모바일 최적화 */
+            #bmi {
+                width: 70px;
+            }
+            
+            /* 혈압 입력 필드 모바일 최적화 */
+            .form-group div[style*="display: flex"] {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .form-group div[style*="display: flex"] input {
+                min-width: 80px;
+            }
+        }
+
+        /* 작은 모바일 화면 (320px 이하) */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .form-container {
+                padding: 15px;
+            }
+            
+            .form-section {
+                padding: 15px;
+            }
+            
+            .btn {
+                padding: 12px;
+                font-size: 0.95rem;
+            }
+            
+            .risk-percentage {
+                font-size: 1.8rem;
+            }
+            
+            .chart-title {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>3대 만성질환 위험도 예측</h1>
+            <p>고혈압, 당뇨병, 고지혈증 발생 위험을 미리 예측하고 예방하세요</p>
+            <div class="save-status" id="saveStatus">자동 저장됨 ✓</div>
+        </div>
+
+        <div class="form-container">
+            <form id="diseaseForm">
+                <!-- 기본 정보 -->
+                <div class="form-section">
+                    <h3>📋 기본 정보</h3>
+                    <p class="required-notice">⚠️ <span style="color: red;">*</span> 표시는 필수 입력 항목입니다.</p>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="age">정확한 나이 <span style="color: red;">*</span></label>
+                            <input type="number" id="age" name="age" min="18" max="100" required placeholder="예: 45">
+                        </div>
+                        <div class="form-group">
+                            <label for="gender">성별 <span style="color: red;">*</span></label>
+                            <select id="gender" name="gender" required>
+                                <option value="">선택하세요</option>
+                                <option value="male">남성</option>
+                                <option value="female">여성</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="pregnancyGroup" style="display: none;">
+                            <label for="pregnancy">임신 여부</label>
+                            <select id="pregnancy" name="pregnancy">
+                                <option value="no">아니오</option>
+                                <option value="yes">예</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="occupation_activity">주 직업 활동량</label>
+                            <select id="occupation_activity" name="occupation_activity">
+                                <option value="sedentary">주로 앉아서 일함 (사무직, 운전업 등)</option>
+                                <option value="moderate">중간 정도 활동 (서비스업, 교육업 등)</option>
+                                <option value="active">활발한 활동 (판매업, 의료업 등)</option>
+                                <option value="heavy">육체 노동 (건설업, 제조업 등)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="health_perception">본인의 현재 건강 상태</label>
+                            <select id="health_perception" name="health_perception">
+                                <option value="excellent">아주 좋음</option>
+                                <option value="good">좋음</option>
+                                <option value="fair">보통</option>
+                                <option value="poor">나쁨</option>
+                                <option value="very_poor">매우 나쁨</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 신체 지표 -->
+                <div class="form-section">
+                    <h3>📏 신체 지표</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="height">키 (cm) <span style="color: red;">*</span></label>
+                            <input type="number" id="height" name="height" min="100" max="250" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="weight">몸무게 (kg) <span style="color: red;">*</span></label>
+                            <input type="number" id="weight" name="weight" min="30" max="200" required>
+                        </div>
+                        <div class="form-group">
+                            <label>BMI</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="text" id="bmi" name="bmi" readonly style="background: #f0f0f0;">
+                                <span id="bmiInterpretation" style="font-weight: 600; padding: 5px 10px; border-radius: 15px; font-size: 0.9rem;"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="waist">허리둘레 (cm)</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="waist" name="waist" min="50" max="150">
+                                <button type="button" class="btn-unknown" onclick="setUnknown('waist')">모름</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>혈압 (mmHg)</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="number" id="systolic" name="systolic" min="80" max="250" placeholder="수축기">
+                                <span>/</span>
+                                <input type="number" id="diastolic" name="diastolic" min="40" max="150" placeholder="이완기">
+                                <button type="button" class="btn-unknown" onclick="setUnknown('blood_pressure')">모름</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="glucose">공복혈당 (mg/dL)</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="glucose" name="glucose" min="60" max="300">
+                                <button type="button" class="btn-unknown" onclick="setUnknown('glucose')">모름</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 가족력 -->
+                <div class="form-section">
+                    <h3>👨‍👩‍👧‍👦 가족력</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>1세대 (부모)</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="parent_hypertension" name="family_history" value="parent_hypertension">
+                                    <label for="parent_hypertension">고혈압</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="parent_diabetes" name="family_history" value="parent_diabetes">
+                                    <label for="parent_diabetes">당뇨병</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="parent_hyperlipidemia" name="family_history" value="parent_hyperlipidemia">
+                                    <label for="parent_hyperlipidemia">고지혈증</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>2세대 (조부모)</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="grandparent_hypertension" name="family_history" value="grandparent_hypertension">
+                                    <label for="grandparent_hypertension">고혈압</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="grandparent_diabetes" name="family_history" value="grandparent_diabetes">
+                                    <label for="grandparent_diabetes">당뇨병</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="grandparent_hyperlipidemia" name="family_history" value="grandparent_hyperlipidemia">
+                                    <label for="grandparent_hyperlipidemia">고지혈증</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>형제자매</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="sibling_hypertension" name="family_history" value="sibling_hypertension">
+                                    <label for="sibling_hypertension">고혈압</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="sibling_diabetes" name="family_history" value="sibling_diabetes">
+                                    <label for="sibling_diabetes">당뇨병</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="sibling_hyperlipidemia" name="family_history" value="sibling_hyperlipidemia">
+                                    <label for="sibling_hyperlipidemia">고지혈증</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 운동습관 -->
+                <div class="form-section">
+                    <h3>🏃‍♂️ 운동 습관</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="exercise_frequency">주당 운동 횟수</label>
+                            <select id="exercise_frequency" name="exercise_frequency">
+                                <option value="0">운동 안함</option>
+                                <option value="1-2">1-2회</option>
+                                <option value="3-4">3-4회</option>
+                                <option value="5+">5회 이상</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="exercise_intensity">운동 강도</label>
+                            <select id="exercise_intensity" name="exercise_intensity">
+                                <option value="low">낮음 (산책 등)</option>
+                                <option value="moderate">보통 (빠른 걷기, 수영 등)</option>
+                                <option value="high">높음 (달리기, 구기운동 등)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 식이습관 -->
+                <div class="form-section">
+                    <h3>🍽️ 식이 습관</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="meals_per_day">하루 식사 횟수</label>
+                            <select id="meals_per_day" name="meals_per_day">
+                                <option value="1">1회</option>
+                                <option value="2">2회</option>
+                                <option value="3">3회</option>
+                                <option value="4+">4회 이상</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="eating_out">주당 외식 횟수</label>
+                            <select id="eating_out" name="eating_out">
+                                <option value="0">거의 안함</option>
+                                <option value="1-3">1-3회</option>
+                                <option value="4-6">4-6회</option>
+                                <option value="7+">매일</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="snack_frequency">하루 간식 섭취 횟수</label>
+                            <select id="snack_frequency" name="snack_frequency">
+                                <option value="0">안 먹음</option>
+                                <option value="1">1회</option>
+                                <option value="2">2회</option>
+                                <option value="3+">3회 이상</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>주로 섭취하는 간식 종류</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="snack_cookies" name="snack_types" value="cookies">
+                                    <label for="snack_cookies">과자류</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="snack_candy" name="snack_types" value="candy">
+                                    <label for="snack_candy">사탕류</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="snack_chocolate" name="snack_types" value="chocolate">
+                                    <label for="snack_chocolate">초콜릿류</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="snack_bread" name="snack_types" value="bread">
+                                    <label for="snack_bread">빵류</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="snack_fruit" name="snack_types" value="fruit">
+                                    <label for="snack_fruit">과일류</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="snack_nuts" name="snack_types" value="nuts">
+                                    <label for="snack_nuts">견과류</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>식이 특성</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="high_sodium" name="diet_habits" value="high_sodium">
+                                    <label for="high_sodium">짠 음식 선호</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="high_sugar" name="diet_habits" value="high_sugar">
+                                    <label for="high_sugar">단 음식 선호</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="late_night_eating" name="diet_habits" value="late_night_eating">
+                                    <label for="late_night_eating">야식 습관</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="processed_food" name="diet_habits" value="processed_food">
+                                    <label for="processed_food">가공식품 자주 섭취</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="soup_preference" name="diet_habits" value="soup_preference">
+                                    <label for="soup_preference">국물 음식 선호</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="fried_food" name="diet_habits" value="fried_food">
+                                    <label for="fried_food">튀긴 음식 선호</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 흡연 및 음주 -->
+                <div class="form-section">
+                    <h3>🚬 흡연 및 음주</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="smoking">흡연 상태</label>
+                            <select id="smoking" name="smoking">
+                                <option value="never">비흡연</option>
+                                <option value="former">과거 흡연</option>
+                                <option value="current">현재 흡연</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="smokingAmountGroup" style="display: none;">
+                            <label for="smoking_amount">하루 흡연량 (개비)</label>
+                            <input type="number" id="smoking_amount" name="smoking_amount" min="1" max="100">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="drinking">음주 빈도</label>
+                            <select id="drinking" name="drinking">
+                                <option value="never">금주</option>
+                                <option value="occasional">가끔 (월 1-2회)</option>
+                                <option value="moderate">보통 (주 1-2회)</option>
+                                <option value="frequent">자주 (주 3회 이상)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="drinkingDetailsGroup" style="display: none;">
+                            <label for="drinking_type">주로 마시는 술 종류</label>
+                            <select id="drinking_type" name="drinking_type">
+                                <option value="soju">소주</option>
+                                <option value="beer">맥주</option>
+                                <option value="makgeolli">막걸리</option>
+                                <option value="wine">와인</option>
+                                <option value="cocktail">칵테일</option>
+                                <option value="whiskey">위스키</option>
+                                <option value="other">기타</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="drinkingAmountGroup" style="display: none;">
+                            <label for="drinking_amount">음주량 (잔/회)</label>
+                            <input type="number" id="drinking_amount" name="drinking_amount" min="1" max="20" placeholder="예) 소주 3잔">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 수면 패턴 -->
+                <div class="form-section">
+                    <h3>😴 수면 패턴</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sleep_hours">평균 수면시간</label>
+                            <select id="sleep_hours" name="sleep_hours">
+                                <option value="<6">6시간 미만</option>
+                                <option value="6-8">6-8시간</option>
+                                <option value=">8">8시간 초과</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="sleep_quality">수면의 질 만족도</label>
+                            <select id="sleep_quality" name="sleep_quality">
+                                <option value="satisfied">만족</option>
+                                <option value="moderate">보통</option>
+                                <option value="unsatisfied">불만족</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="sleep_interruption">수면 중 깨는 빈도</label>
+                            <select id="sleep_interruption" name="sleep_interruption">
+                                <option value="rarely">거의 없음</option>
+                                <option value="sometimes">가끔</option>
+                                <option value="often">자주</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="daytime_sleepiness">주간 졸림</label>
+                            <select id="daytime_sleepiness" name="daytime_sleepiness">
+                                <option value="none">없음</option>
+                                <option value="mild">약간</option>
+                                <option value="severe">매우 졸림</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="sleep_regularity">수면 규칙성</label>
+                            <select id="sleep_regularity" name="sleep_regularity">
+                                <option value="regular">규칙적</option>
+                                <option value="irregular">불규칙</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="insomnia_diagnosis">불면증 진단 경험</label>
+                            <select id="insomnia_diagnosis" name="insomnia_diagnosis">
+                                <option value="no">아니오</option>
+                                <option value="yes">예</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 스트레스 관리 -->
+                <div class="form-section">
+                    <h3>😰 스트레스 관리</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="stress_level">전반적 스트레스 수준</label>
+                            <select id="stress_level" name="stress_level">
+                                <option value="low">낮음</option>
+                                <option value="moderate">보통</option>
+                                <option value="high">높음</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="stress_duration">스트레스 지속 기간</label>
+                            <select id="stress_duration" name="stress_duration">
+                                <option value="<1week">1주 미만</option>
+                                <option value="1week+">1주 이상</option>
+                                <option value="1month+">1개월 이상</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>주요 스트레스 원인 (복수선택 가능)</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stress_work" name="stress_causes" value="work">
+                                    <label for="stress_work">직장/학업</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stress_relationship" name="stress_causes" value="relationship">
+                                    <label for="stress_relationship">인간관계</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stress_financial" name="stress_causes" value="financial">
+                                    <label for="stress_financial">경제적 문제</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stress_health" name="stress_causes" value="health">
+                                    <label for="stress_health">건강 문제</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stress_childcare" name="stress_causes" value="childcare">
+                                    <label for="stress_childcare">육아</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stress_other" name="stress_causes" value="other">
+                                    <label for="stress_other">기타</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>스트레스 해소 방법 (복수선택 가능)</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stress_relief_exercise" name="stress_relief" value="exercise">
+                                    <label for="stress_relief_exercise">운동</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stress_relief_hobby" name="stress_relief" value="hobby">
+                                    <label for="stress_relief_hobby">취미활동</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stress_relief_meditation" name="stress_relief" value="meditation">
+                                    <label for="stress_relief_meditation">명상/요가</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stress_relief_social" name="stress_relief" value="social">
+                                    <label for="stress_relief_social">사람들과 만남</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stress_relief_none" name="stress_relief" value="none">
+                                    <label for="stress_relief_none">특별한 방법 없음</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 질병 과거력 -->
+                <div class="form-section">
+                    <h3>🏥 질병 과거력</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>3대 만성질환 진단 경험</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="past_hypertension" name="past_chronic_diseases" value="hypertension">
+                                    <label for="past_hypertension">고혈압</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="past_diabetes" name="past_chronic_diseases" value="diabetes">
+                                    <label for="past_diabetes">당뇨병</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="past_hyperlipidemia" name="past_chronic_diseases" value="hyperlipidemia">
+                                    <label for="past_hyperlipidemia">고지혈증</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>심혈관 질환 관련 진단 경험</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="angina" name="cardiovascular_diseases" value="angina">
+                                    <label for="angina">협심증</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="myocardial_infarction" name="cardiovascular_diseases" value="myocardial_infarction">
+                                    <label for="myocardial_infarction">심근경색</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stroke" name="cardiovascular_diseases" value="stroke">
+                                    <label for="stroke">뇌졸중</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>기타 관련 질환</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="fatty_liver" name="other_diseases" value="fatty_liver">
+                                    <label for="fatty_liver">지방간 (비알코올성 포함)</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="thyroid" name="other_diseases" value="thyroid">
+                                    <label for="thyroid">갑상선 질환</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="sleep_apnea" name="other_diseases" value="sleep_apnea">
+                                    <label for="sleep_apnea">수면무호흡증</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="depression" name="other_diseases" value="depression">
+                                    <label for="depression">우울증/불안장애</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="autoimmune" name="other_diseases" value="autoimmune">
+                                    <label for="autoimmune">자가면역/류마티스 질환</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row" id="femaleSpecificDiseases" style="display: none;">
+                        <div class="form-group">
+                            <label>여성 특화 질환</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="gestational_diabetes" name="female_diseases" value="gestational_diabetes">
+                                    <label for="gestational_diabetes">임신성 당뇨</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="pcos" name="female_diseases" value="pcos">
+                                    <label for="pcos">다낭성난소증후군</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="buttons">
+                    <button type="button" class="btn btn-primary" onclick="calculateRisk()">위험도 예측하기</button>
+                    <button type="button" class="btn btn-secondary" onclick="confirmReset()">다시하기</button>
+                </div>
+            </form>
+
+            <div id="resultsContainer">
+                <div class="results" id="results">
+                    <!-- 차트 결과가 여기에 표시됩니다 -->
+                </div>
+                
+                <!-- PDF 다운로드 버튼 컨테이너 (결과 영역 외부) -->
+                <div id="downloadButtonContainer" style="display: none; text-align: center; margin-top: 20px; padding: 20px;">
+                    <button class="btn btn-download" onclick="downloadPDF()">📄 결과 PDF 다운로드</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 확인 모달 -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>⚠️ 확인</h3>
+            <p>정말 모든 입력 내용을 초기화하시겠습니까?</p>
+            <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">저장된 데이터도 함께 삭제됩니다.</p>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closeModal()" style="margin-right: 10px;">취소</button>
+                <button class="btn btn-primary" onclick="resetForm()">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let saveTimer = null;
+        const STORAGE_KEY = 'chronicDiseaseFormData';
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFormData();
+            setupAutoSave();
+            setupEventListeners();
+        });
+
+        // 1. 중간 저장 기능
+        function saveFormData() {
+            const formData = new FormData(document.getElementById('diseaseForm'));
+            const data = {};
+            
+            // 일반 input 데이터 수집
+            for (let [key, value] of formData.entries()) {
+                if (data[key]) {
+                    if (Array.isArray(data[key])) {
+                        data[key].push(value);
+                    } else {
+                        data[key] = [data[key], value];
+                    }
+                } else {
+                    data[key] = value;
+                }
+            }
+
+            // 체크박스 데이터 수집
+            const checkboxGroups = [
+                'family_history', 'snack_types', 'diet_habits', 'stress_causes', 
+                'stress_relief', 'past_chronic_diseases', 'cardiovascular_diseases', 
+                'other_diseases', 'female_diseases'
+            ];
+
+            checkboxGroups.forEach(group => {
+                data[group] = Array.from(document.querySelectorAll(`input[name="${group}"]:checked`))
+                    .map(cb => cb.value);
+            });
+
+            // 비활성화된 필드 상태 저장
+            data._disabledFields = {
+                waist: document.getElementById('waist').disabled,
+                systolic: document.getElementById('systolic').disabled,
+                diastolic: document.getElementById('diastolic').disabled,
+                glucose: document.getElementById('glucose').disabled
+            };
+
+            // localStorage에 저장
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                showSaveStatus();
+            } catch (e) {
+                console.error('데이터 저장 실패:', e);
+            }
+        }
+
+        function loadFormData() {
+            try {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (!savedData) return;
+
+                const data = JSON.parse(savedData);
+                
+                // 일반 필드 복원
+                Object.keys(data).forEach(key => {
+                    if (key.startsWith('_')) return; // 메타데이터 스킵
+                    
+                    const element = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
+                    if (element) {
+                        if (element.type === 'checkbox' || element.type === 'radio') {
+                            element.checked = Array.isArray(data[key]) ? 
+                                data[key].includes(element.value) : data[key] === element.value;
+                        } else {
+                            element.value = Array.isArray(data[key]) ? data[key][0] : data[key];
+                        }
+                    }
+                });
+
+                // 체크박스 그룹 복원
+                if (data.family_history) {
+                    data.family_history.forEach(value => {
+                        const cb = document.querySelector(`input[name="family_history"][value="${value}"]`);
+                        if (cb) cb.checked = true;
+                    });
+                }
+
+                ['snack_types', 'diet_habits', 'stress_causes', 'stress_relief', 
+                 'past_chronic_diseases', 'cardiovascular_diseases', 'other_diseases', 'female_diseases'].forEach(group => {
+                    if (data[group]) {
+                        data[group].forEach(value => {
+                            const cb = document.querySelector(`input[name="${group}"][value="${value}"]`);
+                            if (cb) cb.checked = true;
+                        });
+                    }
+                });
+
+                // 비활성화된 필드 상태 복원
+                if (data._disabledFields) {
+                    Object.keys(data._disabledFields).forEach(field => {
+                        if (data._disabledFields[field]) {
+                            const element = document.getElementById(field);
+                            if (element) element.disabled = true;
+                        }
+                    });
+                }
+
+                // 조건부 필드 표시/숨김 처리
+                handleConditionalFields();
+                calculateBMI();
+            } catch (e) {
+                console.error('데이터 로드 실패:', e);
+            }
+        }
+
+        function setupAutoSave() {
+            // 모든 입력 필드에 자동 저장 이벤트 추가
+            const form = document.getElementById('diseaseForm');
+            form.addEventListener('input', debounce(saveFormData, 1000));
+            form.addEventListener('change', debounce(saveFormData, 1000));
+        }
+
+        function debounce(func, wait) {
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(saveTimer);
+                    func(...args);
+                };
+                clearTimeout(saveTimer);
+                saveTimer = setTimeout(later, wait);
+            };
+        }
+
+        function showSaveStatus() {
+            const status = document.getElementById('saveStatus');
+            status.classList.add('show');
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 2000);
+        }
+
+        // 2. 이벤트 리스너 설정
+        function setupEventListeners() {
+            // 성별 선택 시 조건부 필드 표시
+            document.getElementById('gender').addEventListener('change', handleConditionalFields);
+            
+            // 흡연 상태 변경 시
+            document.getElementById('smoking').addEventListener('change', handleConditionalFields);
+            
+            // 음주 빈도 변경 시
+            document.getElementById('drinking').addEventListener('change', handleConditionalFields);
+            
+            // BMI 자동 계산
+            document.getElementById('height').addEventListener('input', calculateBMI);
+            document.getElementById('weight').addEventListener('input', calculateBMI);
+        }
+
+        function handleConditionalFields() {
+            const gender = document.getElementById('gender').value;
+            const smoking = document.getElementById('smoking').value;
+            const drinking = document.getElementById('drinking').value;
+
+            // 임신 여부 및 여성 특화 질환
+            document.getElementById('pregnancyGroup').style.display = 
+                gender === 'female' ? 'block' : 'none';
+            document.getElementById('femaleSpecificDiseases').style.display = 
+                gender === 'female' ? 'block' : 'none';
+
+            // 흡연량
+            document.getElementById('smokingAmountGroup').style.display = 
+                (smoking === 'former' || smoking === 'current') ? 'block' : 'none';
+
+            // 음주 관련
+            const showDrinking = drinking !== 'never';
+            document.getElementById('drinkingDetailsGroup').style.display = 
+                showDrinking ? 'block' : 'none';
+            document.getElementById('drinkingAmountGroup').style.display = 
+                showDrinking ? 'block' : 'none';
+        }
+
+        // BMI 계산 및 해석
+        function calculateBMI() {
+            const height = parseFloat(document.getElementById('height').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const bmiField = document.getElementById('bmi');
+            const bmiInterpretation = document.getElementById('bmiInterpretation');
+            
+            if (height && weight) {
+                const bmi = weight / ((height / 100) ** 2);
+                bmiField.value = bmi.toFixed(1);
+                
+                let interpretation = '';
+                let className = '';
+                
+                if (bmi < 18.5) {
+                    interpretation = '저체중';
+                    className = 'low-risk';
+                } else if (bmi < 23) {
+                    interpretation = '정상';
+                    className = 'low-risk';
+                } else if (bmi < 25) {
+                    interpretation = '과체중';
+                    className = 'moderate-risk';
+                } else if (bmi < 30) {
+                    interpretation = '비만';
+                    className = 'high-risk';
+                } else {
+                    interpretation = '고도비만';
+                    className = 'high-risk';
+                }
+                
+                bmiInterpretation.textContent = interpretation;
+                bmiInterpretation.className = className;
+            } else {
+                bmiField.value = '';
+                bmiInterpretation.textContent = '';
+                bmiInterpretation.className = '';
+            }
+        }
+
+        // '모름' 버튼 처리
+        function setUnknown(fieldType) {
+            switch(fieldType) {
+                case 'waist':
+                    document.getElementById('waist').value = '';
+                    document.getElementById('waist').disabled = true;
+                    break;
+                case 'blood_pressure':
+                    document.getElementById('systolic').value = '';
+                    document.getElementById('diastolic').value = '';
+                    document.getElementById('systolic').disabled = true;
+                    document.getElementById('diastolic').disabled = true;
+                    break;
+                case 'glucose':
+                    document.getElementById('glucose').value = '';
+                    document.getElementById('glucose').disabled = true;
+                    break;
+            }
+            saveFormData(); // 상태 저장
+        }
+
+        // 3. 리셋 확인 기능
+        function confirmReset() {
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+        function resetForm() {
+            // localStorage 데이터 삭제
+            localStorage.removeItem(STORAGE_KEY);
+            
+            // 폼 초기화
+            document.getElementById('diseaseForm').reset();
+            
+            // 조건부 필드 숨김
+            document.getElementById('pregnancyGroup').style.display = 'none';
+            document.getElementById('femaleSpecificDiseases').style.display = 'none';
+            document.getElementById('smokingAmountGroup').style.display = 'none';
+            document.getElementById('drinkingDetailsGroup').style.display = 'none';
+            document.getElementById('drinkingAmountGroup').style.display = 'none';
+            
+            // 결과 숨김
+            document.getElementById('results').style.display = 'none';
+            
+            // PDF 다운로드 버튼 숨김
+            document.getElementById('downloadButtonContainer').style.display = 'none';
+            
+            // 비활성화된 필드 재활성화
+            ['waist', 'systolic', 'diastolic', 'glucose'].forEach(field => {
+                document.getElementById(field).disabled = false;
+            });
+            
+            // BMI 초기화
+            document.getElementById('bmi').value = '';
+            document.getElementById('bmiInterpretation').textContent = '';
+            document.getElementById('bmiInterpretation').className = '';
+            
+            // 모달 닫기
+            closeModal();
+            
+            // 페이지 상단으로 스크롤
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 4. 위험도 계산 (개선된 로직)
+        function calculateRisk() {
+            const formData = new FormData(document.getElementById('diseaseForm'));
+            const data = {};
+            
+            // 기본 데이터 수집
+            for (let [key, value] of formData.entries()) {
+                if (data[key]) {
+                    if (Array.isArray(data[key])) {
+                        data[key].push(value);
+                    } else {
+                        data[key] = [data[key], value];
+                    }
+                } else {
+                    data[key] = value;
+                }
+            }
+
+            // 체크박스 데이터 수집
+            const checkboxGroups = [
+                'family_history', 'snack_types', 'diet_habits', 'stress_causes', 
+                'stress_relief', 'past_chronic_diseases', 'cardiovascular_diseases', 
+                'other_diseases', 'female_diseases'
+            ];
+
+            checkboxGroups.forEach(group => {
+                data[group] = Array.from(document.querySelectorAll(`input[name="${group}"]:checked`))
+                    .map(cb => cb.value);
+            });
+
+            console.log('=== 입력 데이터 확인 ===');
+            console.log('나이:', data.age);
+            console.log('성별:', data.gender);
+            console.log('키/몸무게:', data.height, data.weight);
+
+            // 위험도 계산
+            const risks = calculateDiseaseRisks(data);
+            
+            console.log('=== calculateRisk 최종 확인 ===');
+            console.log('risks 객체:', risks);
+            console.log('고지혈증 값 존재 여부:', 'hyperlipidemia' in risks);
+            console.log('고지혈증 값:', risks.hyperlipidemia);
+            
+            // 결과 표시
+            displayResults(risks, data);
+            
+            // 결과 섹션 표시
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+            
+            // 추가: bar-fill 직접 설정
+            document.querySelectorAll('.bar-fill').forEach(bar => {
+                const targetWidth = bar.getAttribute('data-width');
+                bar.style.width = '0';
+                void bar.offsetWidth;
+                bar.style.width = targetWidth;
+            });
+        }
+
+        function calculateDiseaseRisks(data) {
+            const hypertensionRisk = calculateHypertensionRisk(data);
+            const diabetesRisk = calculateDiabetesRisk(data);
+            const hyperlipidemiaRisk = calculateHyperlipidemiaRisk(data);
+            
+            console.log('=== 위험도 계산 결과 ===');
+            console.log('고혈압 위험도:', hypertensionRisk);
+            console.log('당뇨병 위험도:', diabetesRisk);
+            console.log('고지혈증 위험도:', hyperlipidemiaRisk);
+            
+            const risks = {
+                hypertension: hypertensionRisk,
+                diabetes: diabetesRisk,
+                hyperlipidemia: hyperlipidemiaRisk
+            };
+            
+            console.log('최종 risks 객체:', risks);
+            return risks;
+        }
+
+        // 개선된 고혈압 위험도 계산
+        function calculateHypertensionRisk(data) {
+            let baseRisk = getBaseRiskByAge(parseInt(data.age), 'hypertension');
+            let riskMultiplier = 1.0;
+
+            // 성별 요인
+            if (data.gender === 'male') {
+                riskMultiplier *= 1.2;
+            }
+
+            // BMI와 허리둘레 시너지 효과
+            const bmiRisk = getBMIRiskMultiplier(data);
+            const waistRisk = getWaistRiskMultiplier(data);
+            
+            if (bmiRisk > 1.3 && waistRisk > 1.3) {
+                riskMultiplier *= bmiRisk * waistRisk * 1.2; // 시너지 가중치
+            } else {
+                riskMultiplier *= Math.max(bmiRisk, waistRisk);
+            }
+
+            // 혈압 수치
+            if (data.systolic && data.diastolic) {
+                const systolic = parseFloat(data.systolic);
+                const diastolic = parseFloat(data.diastolic);
+                if (systolic >= 140 || diastolic >= 90) {
+                    return 90; // 이미 고혈압 진단 기준
+                } else if (systolic >= 130 || diastolic >= 85) {
+                    riskMultiplier *= 2.5;
+                } else if (systolic >= 120 || diastolic >= 80) {
+                    riskMultiplier *= 1.5;
+                }
+            }
+
+            // 가족력과 과거력 교차 효과
+            const familyRisk = getFamilyHistoryRisk(data.family_history, 'hypertension');
+            const pastRisk = data.past_chronic_diseases.includes('hypertension') ? 10.0 : 1.0;
+            
+            if (familyRisk > 1.5 && pastRisk > 1.0) {
+                riskMultiplier *= familyRisk * pastRisk * 1.3; // 교차 가중치
+            } else {
+                riskMultiplier *= familyRisk * pastRisk;
+            }
+
+            // 직업 활동량
+            const occupationMultiplier = {
+                'sedentary': 1.3,
+                'moderate': 1.1,
+                'active': 0.9,
+                'heavy': 0.8
+            };
+            riskMultiplier *= occupationMultiplier[data.occupation_activity] || 1.0;
+
+            // 주관적 건강 인식
+            const healthPerceptionMultiplier = {
+                'excellent': 0.8,
+                'good': 0.9,
+                'fair': 1.0,
+                'poor': 1.3,
+                'very_poor': 1.6
+            };
+            riskMultiplier *= healthPerceptionMultiplier[data.health_perception] || 1.0;
+
+            // 수면과 스트레스 교차 효과
+            const sleepStressRisk = getSleepStressRisk(data);
+            riskMultiplier *= sleepStressRisk;
+
+            // 생활습관 요인들
+            riskMultiplier *= getLifestyleRisk(data, 'hypertension');
+
+            // 질병 과거력
+            if (data.cardiovascular_diseases.length > 0) {
+                riskMultiplier *= 3.0;
+            }
+            if (data.other_diseases.includes('sleep_apnea')) {
+                riskMultiplier *= 2.0;
+            }
+            if (data.other_diseases.includes('fatty_liver')) {
+                riskMultiplier *= 1.4;
+            }
+
+            return Math.min(baseRisk * riskMultiplier, 90);
+        }
+
+        // 개선된 당뇨병 위험도 계산
+        function calculateDiabetesRisk(data) {
+            let baseRisk = getBaseRiskByAge(parseInt(data.age), 'diabetes');
+            let riskMultiplier = 1.0;
+
+            // BMI와 허리둘레 시너지 효과
+            const bmiRisk = getBMIRiskMultiplier(data);
+            const waistRisk = getWaistRiskMultiplier(data);
+            
+            if (bmiRisk > 1.5 && waistRisk > 1.5) {
+                riskMultiplier *= bmiRisk * waistRisk * 1.3; // 당뇨는 복부비만에 더 민감
+            } else {
+                riskMultiplier *= Math.max(bmiRisk, waistRisk);
+            }
+
+            // 공복혈당
+            if (data.glucose) {
+                const glucose = parseFloat(data.glucose);
+                if (glucose >= 126) {
+                    return 90; // 이미 당뇨 진단 기준
+                } else if (glucose >= 100) {
+                    riskMultiplier *= 3.0; // 당뇨 전단계
+                }
+            }
+
+            // 가족력과 과거력 교차 효과
+            const familyRisk = getFamilyHistoryRisk(data.family_history, 'diabetes');
+            const pastRisk = data.past_chronic_diseases.includes('diabetes') ? 10.0 : 1.0;
+            
+            if (familyRisk > 1.5 && pastRisk > 1.0) {
+                riskMultiplier *= familyRisk * pastRisk * 1.4;
+            } else {
+                riskMultiplier *= familyRisk * pastRisk;
+            }
+
+            // 직업 활동량 (당뇨는 활동량에 더 민감)
+            const occupationMultiplier = {
+                'sedentary': 1.5,
+                'moderate': 1.2,
+                'active': 0.8,
+                'heavy': 0.7
+            };
+            riskMultiplier *= occupationMultiplier[data.occupation_activity] || 1.0;
+
+            // 주관적 건강 인식
+            const healthPerceptionMultiplier = {
+                'excellent': 0.7,
+                'good': 0.9,
+                'fair': 1.0,
+                'poor': 1.4,
+                'very_poor': 1.8
+            };
+            riskMultiplier *= healthPerceptionMultiplier[data.health_perception] || 1.0;
+
+            // 수면과 스트레스 교차 효과
+            riskMultiplier *= getSleepStressRisk(data);
+
+            // 생활습관 요인들
+            riskMultiplier *= getLifestyleRisk(data, 'diabetes');
+
+            // 질병 과거력
+            if (data.female_diseases.includes('gestational_diabetes')) {
+                riskMultiplier *= 3.0;
+            }
+            if (data.female_diseases.includes('pcos')) {
+                riskMultiplier *= 2.0;
+            }
+            if (data.other_diseases.includes('thyroid')) {
+                riskMultiplier *= 1.5;
+            }
+            if (data.other_diseases.includes('fatty_liver')) {
+                riskMultiplier *= 1.8;
+            }
+
+            return Math.min(baseRisk * riskMultiplier, 90);
+        }
+
+        // 개선된 고지혈증 위험도 계산
+        function calculateHyperlipidemiaRisk(data) {
+            let baseRisk = getBaseRiskByAge(parseInt(data.age), 'hyperlipidemia');
+            let riskMultiplier = 1.0;
+
+            // 성별 요인
+            if (data.gender === 'male') {
+                riskMultiplier *= 1.3;
+            }
+
+            // BMI와 허리둘레
+            const bmiRisk = getBMIRiskMultiplier(data);
+            const waistRisk = getWaistRiskMultiplier(data);
+            riskMultiplier *= Math.max(bmiRisk, waistRisk);
+
+            // 가족력
+            riskMultiplier *= getFamilyHistoryRisk(data.family_history, 'hyperlipidemia');
+
+            // 직업 활동량
+            const occupationMultiplier = {
+                'sedentary': 1.4,
+                'moderate': 1.1,
+                'active': 0.9,
+                'heavy': 0.8
+            };
+            riskMultiplier *= occupationMultiplier[data.occupation_activity] || 1.0;
+
+            // 주관적 건강 인식
+            const healthPerceptionMultiplier = {
+                'excellent': 0.8,
+                'good': 0.9,
+                'fair': 1.0,
+                'poor': 1.3,
+                'very_poor': 1.6
+            };
+            riskMultiplier *= healthPerceptionMultiplier[data.health_perception] || 1.0;
+
+            // 생활습관 요인들
+            riskMultiplier *= getLifestyleRisk(data, 'hyperlipidemia');
+
+            // 질병 과거력
+            if (data.other_diseases.includes('thyroid')) {
+                riskMultiplier *= 1.4;
+            }
+            if (data.other_diseases.includes('fatty_liver')) {
+                riskMultiplier *= 1.6;
+            }
+
+            return Math.min(baseRisk * riskMultiplier, 90);
+        }
+
+        // 보조 함수들
+        function getBaseRiskByAge(age, disease) {
+            // 연속적인 나이를 사용한 선형 계산
+            const riskTable = {
+                'hypertension': { base: 2, increment: 1.8 },
+                'diabetes': { base: 1, increment: 1.2 },
+                'hyperlipidemia': { base: 3, increment: 2.0 }
+            };
+
+            const config = riskTable[disease];
+            const ageAdjusted = Math.max(0, age - 20); // 20세 기준
+            return config.base + (ageAdjusted * config.increment);
+        }
+
+        function getBMIRiskMultiplier(data) {
+            if (!data.height || !data.weight) return 1.0;
+            
+            const bmi = parseFloat(data.weight) / ((parseFloat(data.height) / 100) ** 2);
+            if (bmi < 18.5) return 1.1; // 저체중도 위험
+            if (bmi < 23) return 1.0; // 정상
+            if (bmi < 25) return 1.4; // 과체중
+            if (bmi < 30) return 1.8; // 비만
+            return 2.5; // 고도비만
+        }
+
+        function getWaistRiskMultiplier(data) {
+            if (!data.waist || document.getElementById('waist').disabled) return 1.0;
+            
+            const waist = parseFloat(data.waist);
+            const threshold = data.gender === 'male' ? 90 : 85;
+            
+            if (waist >= threshold + 10) return 2.0;
+            if (waist >= threshold) return 1.6;
+            return 1.0;
+        }
+
+        function getFamilyHistoryRisk(familyHistory, disease) {
+            let multiplier = 1.0;
+            
+            // 부모
+            if (familyHistory.includes(`parent_${disease}`)) {
+                multiplier *= 2.2;
+            }
+            
+            // 조부모
+            if (familyHistory.includes(`grandparent_${disease}`)) {
+                multiplier *= 1.6;
+            }
+            
+            // 형제자매 (새로 추가)
+            if (familyHistory.includes(`sibling_${disease}`)) {
+                multiplier *= 1.8;
+            }
+            
+            return multiplier;
+        }
+
+        function getSleepStressRisk(data) {
+            let multiplier = 1.0;
+            
+            // 수면 문제
+            let sleepIssues = 0;
+            if (data.sleep_hours === '<6' || data.sleep_hours === '>8') sleepIssues++;
+            if (data.sleep_quality === 'unsatisfied') sleepIssues++;
+            if (data.sleep_interruption === 'often') sleepIssues++;
+            if (data.sleep_regularity === 'irregular') sleepIssues++;
+            
+            // 스트레스 수준
+            const stressHigh = data.stress_level === 'high';
+            const stressLong = data.stress_duration === '1month+';
+            
+            // 교차 효과: 수면 문제와 스트레스가 동시에 있을 때 시너지
+            if (sleepIssues >= 2 && stressHigh) {
+                multiplier *= 1.6; // 시너지 효과
+            } else {
+                if (sleepIssues >= 2) multiplier *= 1.3;
+                if (stressHigh) multiplier *= 1.4;
+            }
+            
+            if (stressLong) multiplier *= 1.2;
+            
+            return multiplier;
+        }
+
+        function getLifestyleRisk(data, disease) {
+            let multiplier = 1.0;
+            
+            // 운동
+            if (data.exercise_frequency === '0') {
+                multiplier *= disease === 'diabetes' ? 1.6 : 1.4;
+            }
+            
+            // 식이습관
+            if (disease === 'hypertension' && data.diet_habits.includes('high_sodium')) {
+                multiplier *= 1.6;
+            }
+            if (disease === 'diabetes' && data.diet_habits.includes('high_sugar')) {
+                multiplier *= 1.4;
+            }
+            if (data.diet_habits.includes('processed_food')) {
+                multiplier *= 1.3;
+            }
+            
+            // 흡연
+            if (data.smoking === 'current') {
+                const amount = parseFloat(data.smoking_amount) || 10;
+                multiplier *= disease === 'hypertension' ? 1.8 : 1.4;
+                if (amount > 20) multiplier *= 1.2;
+            }
+            
+            // 음주
+            if (data.drinking === 'frequent') {
+                const amount = parseFloat(data.drinking_amount) || 3;
+                multiplier *= 1.3;
+                if (amount > 5) multiplier *= 1.2;
+            }
+            
+            return multiplier;
+        }
+
+        // 5. 결과 표시 (개선된 버전)
+        function displayResults(risks, data) {
+            const results = document.getElementById('results');
+            const age = parseInt(data.age);
+            const gender = data.gender;
+            
+            // 평균 위험도 가져오기
+            const averageRisks = getAverageRiskByDemographic(age, gender);
+            
+            // 성별과 연령대 텍스트 변환
+            const genderText = gender === 'male' ? '남성' : '여성';
+            
+            // 개인 위험도 차트
+            const personalChart = createBarChart(
+                risks, 
+                '🎯 개인 맞춤 위험도 결과', 
+                `${age}세 ${genderText}인 귀하의 예측 결과입니다`,
+                'personalChart'
+            );
+            
+            // 평균 위험도 차트
+            const averageChart = createBarChart(
+                averageRisks,
+                '📊 동일 연령대/성별 평균 위험도',
+                `${age}세 ${genderText} 일반 인구의 평균적인 위험도입니다`,
+                'averageChart'
+            );
+
+            // 위험도 카드
+            const riskCards = createRiskCards(risks);
+            
+            // 비교 분석
+            const comparisonAnalysis = createComparisonAnalysis(risks, averageRisks);
+            
+            // 결과 HTML 구성 (PDF 다운로드 버튼 제외)
+            results.innerHTML = `
+                <h3>🔍 위험도 예측 결과</h3>
+                
+                ${riskCards}
+                
+                ${personalChart}
+                
+                ${averageChart}
+                
+                ${comparisonAnalysis}
+                
+                <div class="recommendations" id="recommendations">
+                    <!-- 권장사항이 여기에 표시됩니다 -->
+                </div>
+            `;
+
+            // 권장사항 생성
+            generateDetailedRecommendations(risks, data);
+
+            // 결과 섹션과 PDF 다운로드 버튼 표시
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('downloadButtonContainer').style.display = 'block';
+            
+            // 차트 애니메이션 실행 (약간의 지연 후)
+            setTimeout(() => {
+                animateCharts();
+            }, 100);
+            
+            // 결과 영역으로 스크롤
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+            
+            // 추가: bar-fill 직접 설정
+            document.querySelectorAll('.bar-fill').forEach(bar => {
+                const targetWidth = bar.getAttribute('data-width');
+                bar.style.width = '0';        // 초기화
+                void bar.offsetWidth;         // 강제 reflow
+                bar.style.width = targetWidth; // 다시 적용
+            });
+        }
+
+        function createRiskCards(risks) {
+            const diseases = [
+                { key: 'hypertension', name: '고혈압', icon: '❤️' },
+                { key: 'diabetes', name: '당뇨병', icon: '🩸' },
+                { key: 'hyperlipidemia', name: '고지혈증', icon: '🧪' }
+            ];
+
+            let cardsHtml = '<div class="risk-cards">';
+            
+            diseases.forEach(disease => {
+                const risk = Math.round(risks[disease.key]);
+                const riskLevel = getRiskLevel(risk);
+                
+                cardsHtml += `
+                    <div class="risk-card ${riskLevel.class}">
+                        <div class="risk-icon">${disease.icon}</div>
+                        <h4>${disease.name}</h4>
+                        <div class="risk-percentage">${risk}%</div>
+                        <div class="risk-level">${riskLevel.text}</div>
+                    </div>
+                `;
+            });
+            
+            cardsHtml += '</div>';
+            return cardsHtml;
+        }
+
+        function getRiskLevel(percentage) {
+            if (percentage < 20) {
+                return { level: 'low', class: 'low-risk', text: '낮은 위험' };
+            } else if (percentage < 40) {
+                return { level: 'moderate', class: 'moderate-risk', text: '보통 위험' };
+            } else {
+                return { level: 'high', class: 'high-risk', text: '높은 위험' };
+            }
+        }
+
+        function getAverageRiskByDemographic(age, gender) {
+            // 연속적인 나이를 사용한 평균 위험도 계산
+            const baseMultiplier = gender === 'male' ? 1.2 : 1.0;
+            
+            return {
+                hypertension: Math.min((age - 20) * 1.5 * baseMultiplier + 5, 75),
+                diabetes: Math.min((age - 20) * 1.0 * baseMultiplier + 3, 60),
+                hyperlipidemia: Math.min((age - 20) * 1.8 * baseMultiplier + 8, 70)
+            };
+        }
+
+        function createBarChart(risks, title, subtitle, containerId) {
+            const diseases = [
+                { key: 'hypertension', name: '고혈압', color: 'hypertension' },
+                { key: 'diabetes', name: '당뇨병', color: 'diabetes' },
+                { key: 'hyperlipidemia', name: '고지혈증', color: 'hyperlipidemia' }
+            ];
+
+            console.log('차트 생성 시작:', title);
+            console.log('위험도 데이터:', risks);
+
+            let chartHtml = `
+                <div class="chart-container">
+                    <div class="chart-title">${title}</div>
+                    <div class="chart-subtitle">${subtitle}</div>
+                    <div class="chart-canvas-container">
+                        <div class="bar-chart">
+            `;
+
+            diseases.forEach((disease, index) => {
+                const risk = Math.round(risks[disease.key]);
+                console.log(`${disease.name} 위험도: ${risk}%`);
+                
+                chartHtml += `
+                    <div class="bar-item" data-disease="${disease.key}">
+                        <div class="bar-label">${disease.name}</div>
+                        <div class="bar-container">
+                            <div class="bar-fill ${disease.color}" 
+                                 style="width: ${risk}%;" 
+                                 data-width="${risk}%" 
+                                 data-disease="${disease.key}"></div>
+                        </div>
+                        <div class="bar-percentage">${risk}%</div>
+                    </div>
+                `;
+            });
+
+            chartHtml += `
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            console.log('차트 HTML 생성 완료');
+            return chartHtml;
+        }
+
+        // Chart.js를 사용할 경우의 설정 함수 (향후 사용을 위한 준비)
+        function createChartJSChart(canvasId, data, options = {}) {
+            const defaultOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: options.title || '차트'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            };
+
+            // Chart.js 옵션 병합
+            const chartOptions = { ...defaultOptions, ...options };
+
+            // Chart.js가 로드되어 있다면 차트 생성
+            if (typeof Chart !== 'undefined') {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                return new Chart(ctx, {
+                    type: 'bar',
+                    data: data,
+                    options: chartOptions
+                });
+            } else {
+                console.warn('Chart.js가 로드되지 않았습니다.');
+                return null;
+            }
+        }
+
+        function createComparisonAnalysis(personalRisks, averageRisks) {
+            const personalAvg = (personalRisks.hypertension + personalRisks.diabetes + personalRisks.hyperlipidemia) / 3;
+            const populationAvg = (averageRisks.hypertension + averageRisks.diabetes + averageRisks.hyperlipidemia) / 3;
+            
+            let analysisText = '';
+            let analysisClass = '';
+            
+            if (personalAvg < populationAvg * 0.8) {
+                analysisText = '🎉 전반적으로 동일 연령대 평균보다 낮은 위험도를 보이고 있습니다. 현재의 건강한 생활습관을 계속 유지하세요!';
+                analysisClass = 'low-risk';
+            } else if (personalAvg > populationAvg * 1.3) {
+                analysisText = '⚠️ 동일 연령대 평균보다 높은 위험도를 보이고 있어 적극적인 생활습관 개선과 정기적인 건강검진이 필요합니다.';
+                analysisClass = 'high-risk';
+            } else {
+                analysisText = '📊 동일 연령대 평균과 비슷한 수준입니다. 꾸준한 건강관리로 위험도를 더 낮출 수 있습니다.';
+                analysisClass = 'moderate-risk';
+            }
+
+            return `
+                <div class="comparison-note ${analysisClass}">
+                    <strong>📋 종합 분석:</strong> ${analysisText}
+                </div>
+            `;
+        }
+
+        function animateCharts() {
+            // DOM 삽입 후 강제 Reflow 트리거
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.offsetHeight; // 강제 리플로우
+            
+            // 차트 생성 후 잠시 대기
+            setTimeout(() => {
+                const progressBars = document.querySelectorAll('.bar-fill');
+                console.log('애니메이션 실행 - Progress Bar 개수:', progressBars.length);
+                console.log('Progress Bar 요소들:', progressBars);
+                
+                // 각 바의 클래스와 데이터 확인
+                progressBars.forEach((bar, index) => {
+                    console.log(`Bar ${index + 1}:`, {
+                        classes: bar.className,
+                        dataWidth: bar.getAttribute('data-width'),
+                        currentWidth: bar.style.width
+                    });
+                });
+                
+                // 먼저 모든 바의 초기 상태 설정
+                progressBars.forEach((bar, index) => {
+                    const targetWidth = bar.getAttribute('data-width');
+                    console.log(`Progress Bar ${index + 1}: ${targetWidth}`);
+                    
+                    if (targetWidth) {
+                        // 초기 상태 강제 설정
+                        bar.style.display = 'block';
+                        bar.style.visibility = 'visible';
+                        bar.style.opacity = '1';
+                        bar.style.height = '100%';
+                        bar.style.width = '0'; // 초기에는 0으로 설정
+                        
+                        // 색상 강제 적용
+                        if (bar.classList.contains('hypertension')) {
+                            bar.style.background = 'linear-gradient(90deg, #ff6b6b, #ff5252)';
+                            console.log('고혈압 색상 적용');
+                        } else if (bar.classList.contains('diabetes')) {
+                            bar.style.background = 'linear-gradient(90deg, #4ecdc4, #26a69a)';
+                            console.log('당뇨병 색상 적용');
+                        } else if (bar.classList.contains('hyperlipidemia')) {
+                            bar.style.background = 'linear-gradient(90deg, #45b7d1, #2196f3)';
+                            console.log('고지혈증 색상 적용');
+                        }
+                    }
+                });
+                
+                // 강제 Reflow 트리거 (요청하신 방식)
+                progressBars.forEach((bar, index) => {
+                    const width = bar.getAttribute('data-width');
+                    if (width) {
+                        bar.style.width = '0';
+                        void bar.offsetWidth; // 강제 리플로우
+                        // 약간의 지연 후 실제 너비 적용
+                        setTimeout(() => {
+                            bar.style.width = width;
+                            console.log(`Bar ${index + 1} 즉시 적용: ${width}`);
+                        }, 50 + (index * 10));
+                    }
+                });
+                
+                // 추가 보장: 각 바를 순차적으로 애니메이션
+                progressBars.forEach((bar, index) => {
+                    const targetWidth = bar.getAttribute('data-width');
+                    if (targetWidth) {
+                        setTimeout(() => {
+                            bar.style.width = targetWidth;
+                            console.log(`Bar ${index + 1} 애니메이션 적용: ${targetWidth}`);
+                        }, 300 + (index * 200));
+                    }
+                });
+                
+                // 최종 보장: 2초 후 모든 바 다시 확인
+                setTimeout(() => {
+                    const finalCheck = document.querySelectorAll('.bar-fill');
+                    console.log('최종 확인 - 총 바 개수:', finalCheck.length);
+                    
+                    finalCheck.forEach((bar, index) => {
+                        const targetWidth = bar.getAttribute('data-width');
+                        const currentWidth = bar.style.width;
+                        console.log(`최종 확인 Bar ${index + 1}:`, {
+                            target: targetWidth,
+                            current: currentWidth,
+                            classes: bar.className
+                        });
+                        
+                        if (targetWidth && (currentWidth === '0px' || currentWidth === '0%' || currentWidth === '')) {
+                            bar.style.width = targetWidth;
+                            console.log(`최종 확인 - Bar ${index + 1} 재적용: ${targetWidth}`);
+                        }
+                    });
+                }, 2500);
+                
+            }, 100); // 차트 생성 후 100ms 대기
+        }
+
+        // 6. 상세 권장사항 생성
+        function generateDetailedRecommendations(risks, data) {
+            const diseases = [
+                { key: 'hypertension', name: '고혈압', icon: '❤️' },
+                { key: 'diabetes', name: '당뇨병', icon: '🩸' },
+                { key: 'hyperlipidemia', name: '고지혈증', icon: '🧪' }
+            ];
+
+            let recommendationsHtml = '<h4>📋 질환별 맞춤 예방 권장사항</h4>';
+
+            diseases.forEach(disease => {
+                const risk = Math.round(risks[disease.key]);
+                const riskLevel = getRiskLevel(risk);
+                const recommendations = getSpecificRecommendations(disease.key, risk, data);
+
+                recommendationsHtml += `
+                    <div class="disease-recommendations">
+                        <h5>${disease.icon} ${disease.name} (위험도: ${risk}%)</h5>
+                        <ul>
+                `;
+
+                recommendations.forEach(rec => {
+                    recommendationsHtml += `
+                        <li>
+                            • ${rec.text}
+                            ${rec.detail ? `<a href="#" class="detail-link" onclick="showDetail('${rec.detail}')">자세히 보기</a>` : ''}
+                        </li>
+                    `;
+                });
+
+                recommendationsHtml += '</ul></div>';
+            });
+
+            document.getElementById('recommendations').innerHTML = recommendationsHtml;
+        }
+
+        function getSpecificRecommendations(disease, risk, data) {
+            const recommendations = [];
+            
+            if (disease === 'hypertension') {
+                if (risk > 40) {
+                    recommendations.push({
+                        text: '정기적인 혈압 측정과 전문의 상담을 받으세요',
+                        detail: 'hypertension_monitoring'
+                    });
+                }
+                
+                if (data.diet_habits.includes('high_sodium')) {
+                    recommendations.push({
+                        text: '나트륨 섭취를 하루 2000mg 이하로 제한하세요',
+                        detail: 'sodium_reduction'
+                    });
+                }
+                
+                if (data.exercise_frequency === '0') {
+                    recommendations.push({
+                        text: '주 3-4회, 30분 이상의 유산소 운동을 시작하세요',
+                        detail: 'exercise_guide'
+                    });
+                }
+            }
+            
+            if (disease === 'diabetes') {
+                if (risk > 40) {
+                    recommendations.push({
+                        text: '공복혈당 및 당화혈색소 검사를 정기적으로 받으세요',
+                        detail: 'diabetes_screening'
+                    });
+                }
+                
+                if (data.snack_types.includes('candy') || data.snack_types.includes('chocolate')) {
+                    recommendations.push({
+                        text: '단순당 섭취를 줄이고 복합탄수화물을 선택하세요',
+                        detail: 'sugar_management'
+                    });
+                }
+            }
+            
+            if (disease === 'hyperlipidemia') {
+                if (risk > 40) {
+                    recommendations.push({
+                        text: '혈중 콜레스테롤 수치를 정기적으로 확인하세요',
+                        detail: 'cholesterol_monitoring'
+                    });
+                }
+                
+                if (data.diet_habits.includes('processed_food')) {
+                    recommendations.push({
+                        text: '포화지방과 트랜스지방 섭취를 제한하세요',
+                        detail: 'fat_management'
+                    });
+                }
+            }
+            
+            return recommendations;
+        }
+
+        function showDetail(detailType) {
+            const details = {
+                'hypertension_monitoring': '혈압은 아침 기상 후와 저녁 잠자리에 들기 전 측정하는 것이 좋습니다. 연속 3일 측정한 평균값을 기록하여 의사와 상담하세요.',
+                'sodium_reduction': '김치, 젓갈류, 라면 등 고나트륨 식품을 피하고, 천연 향신료나 허브를 활용한 조리법을 시도해보세요.',
+                'exercise_guide': '빠른 걷기, 자전거 타기, 수영 등의 유산소 운동이 혈압 조절에 효과적입니다. 운동 강도는 대화가 가능한 수준에서 시작하세요.',
+                'diabetes_screening': '공복혈당 100mg/dL 이상, 당화혈색소 5.7% 이상이면 당뇨 전단계로 더욱 주의 깊은 관리가 필요합니다.',
+                'sugar_management': '현미, 통곡물, 채소 등 섬유질이 풍부한 식품을 선택하고, 과일도 하루 1-2회 적당량만 섭취하세요.',
+                'cholesterol_monitoring': '총 콜레스테롤 200mg/dL 이하, LDL 콜레스테롤 130mg/dL 이하 유지를 목표로 하세요.',
+                'fat_management': '올리브오일, 견과류 등의 불포화지방을 선택하고, 튀김음식과 가공육 섭취를 줄이세요.'
+            };
+            
+            alert(details[detailType] || '상세 정보를 준비 중입니다.');
+        }
+
+        // 7. PDF 다운로드 기능 (html2canvas + jsPDF 방식)
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            
+            // 결과 영역 가져오기
+            const resultsElement = document.getElementById('results');
+            
+            if (!resultsElement) {
+                alert('결과를 먼저 생성해주세요.');
+                return;
+            }
+
+            // 로딩 상태 표시 (선택사항)
+            const downloadBtn = document.querySelector('#downloadButtonContainer button');
+            const originalText = downloadBtn.textContent;
+            downloadBtn.textContent = '📄 PDF 생성 중...';
+            downloadBtn.disabled = true;
+
+            // html2canvas로 결과 영역 캡처
+            html2canvas(resultsElement, {
+                scale: 1,           // 메모리 절약을 위해 1로 설정
+                useCORS: true,      // CORS 허용
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                logging: false,     // 콘솔 로그 비활성화
+                width: resultsElement.scrollWidth,
+                height: resultsElement.scrollHeight
+            }).then(function(canvas) {
+                try {
+                    // A4 크기 설정 (210 x 297 mm)
+                    const doc = new jsPDF('p', 'mm', 'a4');
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    const pageHeight = doc.internal.pageSize.getHeight();
+                    
+                    // 마진 설정 (10mm)
+                    const margin = 10;
+                    const maxWidth = pageWidth - (margin * 2);
+                    const maxHeight = pageHeight - (margin * 2);
+                    
+                    // 캔버스를 이미지로 변환
+                    const imgData = canvas.toDataURL('image/png');
+                    
+                    // 원본 이미지 크기
+                    const imgWidth = canvas.width;
+                    const imgHeight = canvas.height;
+                    
+                    // 비율 유지하면서 페이지에 맞게 크기 조절
+                    const ratio = Math.min(maxWidth / (imgWidth * 0.264583), maxHeight / (imgHeight * 0.264583));
+                    const scaledWidth = imgWidth * 0.264583 * ratio;  // px to mm 변환 (1px = 0.264583mm)
+                    const scaledHeight = imgHeight * 0.264583 * ratio;
+                    
+                    // 중앙 정렬을 위한 x, y 좌표 계산
+                    const x = (pageWidth - scaledWidth) / 2;
+                    const y = margin;
+                    
+                    // 이미지가 한 페이지를 넘는 경우 페이지 분할 처리
+                    if (scaledHeight > maxHeight) {
+                        // 여러 페이지로 분할
+                        let remainingHeight = scaledHeight;
+                        let sourceY = 0;
+                        let pageCount = 0;
+                        
+                        while (remainingHeight > 0) {
+                            if (pageCount > 0) {
+                                doc.addPage();
+                            }
+                            
+                            const currentPageHeight = Math.min(maxHeight, remainingHeight);
+                            const sourceHeight = (currentPageHeight / scaledHeight) * imgHeight;
+                            
+                            // 현재 페이지용 캔버스 생성
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = imgWidth;
+                            tempCanvas.height = sourceHeight;
+                            const tempCtx = tempCanvas.getContext('2d');
+                            
+                            // 원본 캔버스에서 해당 부분 복사
+                            tempCtx.drawImage(canvas, 0, sourceY, imgWidth, sourceHeight, 0, 0, imgWidth, sourceHeight);
+                            
+                            const tempImgData = tempCanvas.toDataURL('image/png');
+                            doc.addImage(tempImgData, 'PNG', x, y, scaledWidth, currentPageHeight);
+                            
+                            remainingHeight -= currentPageHeight;
+                            sourceY += sourceHeight;
+                            pageCount++;
+                        }
+                    } else {
+                        // 한 페이지에 들어가는 경우
+                        doc.addImage(imgData, 'PNG', x, y, scaledWidth, scaledHeight);
+                    }
+                    
+                    // PDF 저장
+                    doc.save('만성질환_위험도_예측_결과.pdf');
+                    
+                } catch (error) {
+                    console.error('PDF 생성 중 오류 발생:', error);
+                    alert('PDF 생성 중 오류가 발생했습니다. 다시 시도해 주세요.');
+                } finally {
+                    // 버튼 상태 복원
+                    downloadBtn.textContent = originalText;
+                    downloadBtn.disabled = false;
+                }
+            }).catch(function(error) {
+                console.error('캔버스 캡처 중 오류 발생:', error);
+                alert('화면 캡처 중 오류가 발생했습니다. 다시 시도해 주세요.');
+                
+                // 버튼 상태 복원
+                downloadBtn.textContent = originalText;
+                downloadBtn.disabled = false;
+            });
+        }
+
+        // 클릭 외부 영역 클릭 시 모달 닫기
+        window.onclick = function(event) {
+            const modal = document.getElementById('confirmModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
